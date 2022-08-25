@@ -17,6 +17,10 @@ eval_data <- process_data()
 #' @param pbPch plot character of Process-Based model
 #' @param dlPch plot character of Deep Learning model
 #' @param pgdlPch plot character of Process-Guided Deep Learning model
+#' @param plotwidth plot width
+#' @param plotheight plot height
+#' @param plotres plot resolution in dots per inch
+#' @param plotunits width and height units (default inches)
 #' @return Figure 1 plot of model comparison, looking at RMSE as a function of the # of training temperature profiles
 
 plot_results <- function(modeldata = eval_data, 
@@ -26,12 +30,17 @@ plot_results <- function(modeldata = eval_data,
                          pgdlColor = '#7570b3',
                          pbPch = 21,
                          dlPch = 22,
-                         pgdlPch = 23){
+                         pgdlPch = 23,
+                         plotwidth = 8,
+                         plotheight = 10,
+                         plotres = 200,
+                         plotunits = 'in',
+                         ){
   project_output_dir <- '3_visualize/out'
   if (!dir.exists(project_output_dir)){
     dir.create(project_output_dir)
   }
-  png(file = plotname, width = 8, height = 10, res = 200, units = 'in')
+  png(file = plotname, width = plotwidth, height = plotheight, res = plotres, units = plotunits)
   par(omi = c(0,0,0.05,0.05), mai = c(1,1,0,0), las = 1, mgp = c(2,.5,0), cex = 1.5)
   
   plot(NA, NA, xlim = c(2, 1000), ylim = c(4.7, 0.75),

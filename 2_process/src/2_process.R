@@ -6,7 +6,7 @@ library(whisker)
 source("1_fetch/src/1_fetch.R")
 data <- fetch_data()
 
-#' Save the model summary and diagnostic results, and filter and add plotting attributes to model comparison
+#' Save the model summary, filter and add plotting attributes to model comparison
 #' 
 #' @param modeldata data downloaded in 1_fetch (model summary csv for this example)
 #' @param outfile file name and directory of model summary results
@@ -21,7 +21,6 @@ data <- fetch_data()
 
 process_data <- function(modeldata = data, 
                          outfile = "2_process/out/model_summary_results.csv", 
-                         modelfile = "2_process/out/model_diagnostic_text.txt",
                          pbColor = '#1b9e77',
                          dlColor = '#d95f02',
                          pgdlColor = '#7570b3',
@@ -51,17 +50,24 @@ process_data <- function(modeldata = data,
   
   #save the processed data
   readr::write_csv(eval_data, file = outfile)
-  
-  #save the model diagnostics
-  render_data = list(pgdl_980mean = filter(eval_data, model_type == 'pgdl', exper_id == "similar_980") %>% pull(rmse) %>% mean %>% round(2),
-                      dl_980mean = filter(eval_data, model_type == 'dl', exper_id == "similar_980") %>% pull(rmse) %>% mean %>% round(2),
-                      pb_980mean = filter(eval_data, model_type == 'pb', exper_id == "similar_980") %>% pull(rmse) %>% mean %>% round(2),
-                      dl_500mean = filter(eval_data, model_type == 'dl', exper_id == "similar_500") %>% pull(rmse) %>% mean %>% round(2),
-                      pb_500mean = filter(eval_data, model_type == 'pb', exper_id == "similar_500") %>% pull(rmse) %>% mean %>% round(2),
-                      dl_100mean = filter(eval_data, model_type == 'dl', exper_id == "similar_100") %>% pull(rmse) %>% mean %>% round(2),
-                      pb_100mean = filter(eval_data, model_type == 'pb', exper_id == "similar_100") %>% pull(rmse) %>% mean %>% round(2),
-                      pgdl_2mean = filter(eval_data, model_type == 'pgdl', exper_id == "similar_2") %>% pull(rmse) %>% mean %>% round(2),
-                      pb_2mean = filter(eval_data, model_type == 'pb', exper_id == "similar_2") %>% pull(rmse) %>% mean %>% round(2))
+  return(eval_data)
+}
+
+eval_data <- process_data()
+
+#' Save the model diagnostics
+#' 
+#' @param evaldata data downloaded in 1_fetch (model summary csv for this example)
+#' @param modelfile file name and directory of model diagnostics
+#' @return save the model diagnostics
+
+save_model_diagnostics <- function(evaldata = eval_data,
+                                   modelfile = "2_process/out/model_diagnostic_text.txt"){
+  mean_data = evaldata %>% group_by(model_type, exper_id) %>%
+    summarize(mean_rmse = round(mean(rmse), 2)) %>%
+    mutate(Name = paste0(paste0(model_type, exper_id, "mean")))
+  render_data = list(mean_data$mean_rmse)[[1]]
+  names(render_data) = gsub("similar", "", mean_data$Name) 
   
   template_1 = 'resulted in mean RMSEs (means calculated as average of RMSEs from the five dataset iterations) of {{pgdl_980mean}}, {{dl_980mean}}, and {{pb_980mean}}°C for the PGDL, DL, and PB models, respectively.
   The relative performance of DL vs PB depended on the amount of training data. The accuracy of Lake Mendota temperature predictions from the DL was better than PB when trained on 500 profiles 
@@ -69,6 +75,6 @@ process_data <- function(modeldata = data,
   The PGDL prediction accuracy was more robust compared to PB when only two profiles were provided for training ({{pgdl_2mean}} and {{pb_2mean}}°C, respectively). '
   
   whisker.render(template_1 %>% str_remove_all('\n') %>% str_replace_all('  ', ' '), render_data ) %>% cat(file = modelfile)
-  
-  return(eval_data)
+  return(paste0("Model diagnostics saved here: ", modelfile))
 }
+
