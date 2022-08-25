@@ -1,21 +1,51 @@
 library(dplyr)
 library(stringr)
+library(whisker)
+
+project_output_dir <- '2_process/out'
+
+if (!dir.exists(project_output_dir)){
+  dir.create(project_output_dir)
+}
+
+source("1_fetch/src/1_fetch.R")
+data <- fetch_data()
+
+#' Save the model summary and diagnostic results, and filter and add plotting attributes to model comparison
+#' 
+#' @param modeldata data downloaded in 1_fetch (model summary csv for this example)
+#' @param outfile file name and directory of model summary results
+#' @param modelfile file name and directory of model diagnostics
+#' @param pbColor color of Process-Based model
+#' @param dlColor color of Deep Learning model
+#' @param pgdlColor color of Process-Guided Deep Learning model
+#' @param pbPch plot character of Process-Based model
+#' @param dlPch plot character of Deep Learning model
+#' @param pgdlPch plot character of Process-Guided Deep Learning model
+#' @return filtered model data from science base with visualization parameters
 
 process_data <- function(modeldata = data, 
                          outfile = "2_process/out/model_summary_results.csv", 
-                         modelfile = "2_process/out/model_diagnostic_text.txt"){
+                         modelfile = "2_process/out/model_diagnostic_text.txt",
+                         pbColor = '#1b9e77',
+                         dlColor = '#d95f02',
+                         pgdlColor = '#7570b3',
+                         pbPch = 21,
+                         dlPch = 22,
+                         pgdlPch = 23
+                         ){
   eval_data = modeldata %>%
     filter(str_detect(exper_id, 'similar_[0-9]+')) %>%
     mutate(
       col = case_when(
-        model_type == 'pb' ~ '#1b9e77',
-        model_type == 'dl' ~ '#d95f02',
-        model_type == 'pgdl' ~ '#7570b3'
+        model_type == 'pb' ~ pbColor,
+        model_type == 'dl' ~ dlColor,
+        model_type == 'pgdl' ~ pgdlColor
       ),
       pch = case_when(
-        model_type == 'pb' ~ 21,
-        model_type == 'dl' ~ 22,
-        model_type == 'pgdl' ~ 23
+        model_type == 'pb' ~ pbPch,
+        model_type == 'dl' ~ dlPch,
+        model_type == 'pgdl' ~ pgdlPch
       ),
       n_prof = as.numeric(str_extract(exper_id, '[0-9]+'))
     )
