@@ -2,11 +2,6 @@ library(dplyr)
 library(stringr)
 library(whisker)
 
-project_output_dir <- '2_process/out'
-
-if (!dir.exists(project_output_dir)){
-  dir.create(project_output_dir)
-}
 
 source("1_fetch/src/1_fetch.R")
 data <- fetch_data()
@@ -34,6 +29,10 @@ process_data <- function(modeldata = data,
                          dlPch = 22,
                          pgdlPch = 23
                          ){
+  project_output_dir <- '2_process/out'
+  if (!dir.exists(project_output_dir)){
+    dir.create(project_output_dir)
+  }
   eval_data = modeldata %>%
     filter(str_detect(exper_id, 'similar_[0-9]+')) %>%
     mutate(

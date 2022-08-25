@@ -1,11 +1,5 @@
 library(dplyr)
 
-project_output_dir <- '3_visualize/out'
-
-if (!dir.exists(project_output_dir)){
-  dir.create(project_output_dir)
-}
-
 source("1_fetch/src/1_fetch.R")
 data <- fetch_data()
 
@@ -33,7 +27,10 @@ plot_results <- function(modeldata = eval_data,
                          pbPch = 21,
                          dlPch = 22,
                          pgdlPch = 23){
-  
+  project_output_dir <- '3_visualize/out'
+  if (!dir.exists(project_output_dir)){
+    dir.create(project_output_dir)
+  }
   png(file = plotname, width = 8, height = 10, res = 200, units = 'in')
   par(omi = c(0,0,0.05,0.05), mai = c(1,1,0,0), las = 1, mgp = c(2,.5,0), cex = 1.5)
   
