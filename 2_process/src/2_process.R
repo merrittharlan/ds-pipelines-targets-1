@@ -2,14 +2,9 @@ library(dplyr)
 library(stringr)
 library(whisker)
 
-
-source("1_fetch/src/1_fetch.R")
-data <- fetch_data()
-
 #' Save the model summary, filter and add plotting attributes to model comparison
 #' 
 #' @param modeldata data downloaded in 1_fetch (model summary csv for this example)
-#' @param outfile file name and directory of model summary results
 #' @param modelfile file name and directory of model diagnostics
 #' @param pbColor color of Process-Based model
 #' @param dlColor color of Deep Learning model
@@ -19,8 +14,7 @@ data <- fetch_data()
 #' @param pgdlPch plot character of Process-Guided Deep Learning model
 #' @return filtered model data from science base with visualization parameters
 
-process_data <- function(modeldata = data, 
-                         outfile = "2_process/out/model_summary_results.csv", 
+process_data <- function(in_filepath = "1_fetch/out/model_RMSEs.csv", 
                          pbColor = '#1b9e77',
                          dlColor = '#d95f02',
                          pgdlColor = '#7570b3',
@@ -32,6 +26,9 @@ process_data <- function(modeldata = data,
   if (!dir.exists(project_output_dir)){
     dir.create(project_output_dir)
   }
+  
+  modeldata = readr::read_csv(in_filepath, col_types = 'iccd')
+ 
   eval_data = modeldata %>%
     filter(str_detect(exper_id, 'similar_[0-9]+')) %>%
     mutate(
@@ -47,23 +44,21 @@ process_data <- function(modeldata = data,
       ),
       n_prof = as.numeric(str_extract(exper_id, '[0-9]+'))
     )
-  
-  #save the processed data
-  readr::write_csv(eval_data, file = outfile)
+  readr::write_csv(eval_data, file = "2_process/out/model_summary_results.csv")
   return(eval_data)
 }
 
-eval_data <- process_data()
 
 #' Save the model diagnostics
 #' 
-#' @param evaldata data downloaded in 1_fetch (model summary csv for this example)
-#' @param modelfile file name and directory of model diagnostics
+#' @param data data downloaded in 1_fetch (model summary csv for this example)
+#' @param out_filepath file name and directory of model diagnostics
 #' @return save the model diagnostics
 
-save_model_diagnostics <- function(evaldata = eval_data,
-                                   modelfile = "2_process/out/model_diagnostic_text.txt"){
-  mean_data = evaldata %>% group_by(model_type, exper_id) %>%
+generate_model_diagnostics <- function(data = eval_data,
+                                   out_filepath = "2_process/out/model_diagnostic_text.txt"){
+
+  mean_data = data %>% group_by(model_type, exper_id) %>%
     summarize(mean_rmse = round(mean(rmse), 2)) %>%
     mutate(Name = paste0(paste0(model_type, exper_id, "mean")))
   render_data = list(mean_data$mean_rmse)[[1]]
@@ -74,7 +69,7 @@ save_model_diagnostics <- function(evaldata = eval_data,
   ({{dl_500mean}} and {{pb_500mean}}°C, respectively) or more, but worse than PB when training was reduced to 100 profiles ({{dl_100mean}} and {{pb_100mean}}°C respectively) or fewer.
   The PGDL prediction accuracy was more robust compared to PB when only two profiles were provided for training ({{pgdl_2mean}} and {{pb_2mean}}°C, respectively). '
   
-  whisker.render(template_1 %>% str_remove_all('\n') %>% str_replace_all('  ', ' '), render_data ) %>% cat(file = modelfile)
-  return(paste0("Model diagnostics saved here: ", modelfile))
+  whisker.render(template_1 %>% str_remove_all('\n') %>% str_replace_all('  ', ' '), render_data ) %>% cat(file = out_filepath)
+  return(out_filepath)
 }
 
