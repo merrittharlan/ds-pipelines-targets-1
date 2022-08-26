@@ -1,15 +1,9 @@
 library(dplyr)
 
-source("1_fetch/src/1_fetch.R")
-data <- fetch_data()
-
-source("2_process/src/2_process.R")
-eval_data <- process_data()
-
 #' Plot the model data
 #' 
-#' @param modeldata data processed in 2_fetch
-#' @param plotname file name and directory of output plot
+#' @param data data processed in 2_fetch
+#' @param out_filepath file name and directory of output plot
 #' @param modelfile file name and directory of model diagnostics
 #' @param pbColor color of Process-Based model
 #' @param dlColor color of Deep Learning model
@@ -23,8 +17,8 @@ eval_data <- process_data()
 #' @param plotunits width and height units (default inches)
 #' @return Figure 1 plot of model comparison, looking at RMSE as a function of the # of training temperature profiles
 
-plot_results <- function(modeldata = eval_data, 
-                         plotname = "3_visualize/out/figure_1.png",
+make_plot <- function(data = eval_data, 
+                         out_filepath = "3_visualize/out/figure_1.png",
                          pbColor = '#1b9e77',
                          dlColor = '#d95f02',
                          pgdlColor = '#7570b3',
@@ -34,13 +28,13 @@ plot_results <- function(modeldata = eval_data,
                          plotwidth = 8,
                          plotheight = 10,
                          plotres = 200,
-                         plotunits = 'in',
+                         plotunits = 'in'
                          ){
   project_output_dir <- '3_visualize/out'
   if (!dir.exists(project_output_dir)){
     dir.create(project_output_dir)
   }
-  png(file = plotname, width = plotwidth, height = plotheight, res = plotres, units = plotunits)
+  png(file = out_filepath, width = plotwidth, height = plotheight, res = plotres, units = plotunits)
   par(omi = c(0,0,0.05,0.05), mai = c(1,1,0,0), las = 1, mgp = c(2,.5,0), cex = 1.5)
   
   plot(NA, NA, xlim = c(2, 1000), ylim = c(4.7, 0.75),
@@ -56,7 +50,7 @@ plot_results <- function(modeldata = eval_data,
     mutate(dl = -pgdl, pb = 0, n_prof = n_profs)
   
   for (mod in c('pb','dl','pgdl')){
-    mod_data <- filter(eval_data, model_type == mod)
+    mod_data <- filter(data, model_type == mod)
     mod_profiles <- unique(mod_data$n_prof)
     for (mod_profile in mod_profiles){
       d <- filter(mod_data, n_prof == mod_profile) %>% summarize(y0 = min(rmse), y1 = max(rmse), col = unique(col))
@@ -81,5 +75,5 @@ plot_results <- function(modeldata = eval_data,
   text(2.3, 1.1, 'Process-Based', pos = 4, cex = 1.1)
   
   dev.off()
-  return(paste0("Figure 1 located here: ", plotname))
+  return(out_filepath)
 }
